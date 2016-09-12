@@ -14,11 +14,14 @@ import android.util.Log;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -122,10 +125,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
         mLastLocation = LocationServices.FusedLocationApi.getLastLocation(
                 mGoogleApiClient);
-        Log.d("MapsActivity", String.valueOf(mLastLocation != null));
+
         if (mLastLocation != null) {
             moveCameraToCurrentLocation();
-            mApiService.getSpawns(mLastLocation.toString()).enqueue(new Callback<List<PokemonSpawn>>() {
+            String ll = String.valueOf(mLastLocation.getLatitude()) + "," + String.valueOf(mLastLocation.getLongitude());
+            mApiService.getSpawns(ll).enqueue(new Callback<List<PokemonSpawn>>() {
                 @Override
                 public void onResponse(Call<List<PokemonSpawn>> call, Response<List<PokemonSpawn>> response) {
                     List<PokemonSpawn> spawns = response.body();
@@ -143,10 +147,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private void addSpawnsToMap() {
         if (mMap != null) {
+
+            LatLngBounds.Builder builder = new LatLngBounds.Builder();
+
             for (PokemonSpawn spawn : mSpawns) {
                 LatLng latLng = new LatLng(spawn.getLatitude(), spawn.getLongitude());
                 mMap.addMarker(new MarkerOptions().position(latLng).title(spawn.getPokedexNumber().toString()));
+                builder.include(latLng);
             }
+
+            LatLngBounds bounds = builder.build();
+            int padding = 10; // offset from edges of the map in pixels
+            CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(bounds, padding);
+            mMap.moveCamera(cu);
         }
     }
 

@@ -1,20 +1,39 @@
 package com.oneuphero.pogotracker;
 
-import java.util.HashMap;
+import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.SerializedName;
+
 import java.util.Map;
 
 public class PokemonSpawn {
 
+    @SerializedName("id")
+    @Expose
     private Integer id;
+    @SerializedName("pokedex_number")
+    @Expose
     private Integer pokedexNumber;
+    @SerializedName("latitude")
+    @Expose
     private Float latitude;
+    @SerializedName("longitude")
+    @Expose
     private Float longitude;
+    @SerializedName("expires_at")
+    @Expose
     private Integer expiresAt;
+    @SerializedName("created_at")
+    @Expose
     private String createdAt;
+    @SerializedName("updated_at")
+    @Expose
     private String updatedAt;
+    @SerializedName("distance")
+    @Expose
     private Float distance;
+    @SerializedName("bearing")
+    @Expose
     private String bearing;
-    private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
     /**
      *
@@ -177,13 +196,4 @@ public class PokemonSpawn {
     public void setBearing(String bearing) {
         this.bearing = bearing;
     }
-
-    public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties;
-    }
-
-    public void setAdditionalProperty(String name, Object value) {
-        this.additionalProperties.put(name, value);
-    }
-
 }
