@@ -1,0 +1,19 @@
+<resources>
+    <!--
+    TODO: Before you run your application, you need a Google Maps API key.
+
+    To get one, follow this link, follow the directions and press "Create" at the end:
+
+    https://console.developers.google.com/flows/enableapi?apiid=maps_android_backend&keyType=CLIENT_SIDE_ANDROID&r=47:3D:CF:E9:F2:FF:B0:D5:82:C9:B3:86:81:21:3A:90:2E:65:00:4D%3Bcom.oneuphero.pogotracker
+
+    You can also add your credentials to an existing key, using this line:
+    47:3D:CF:E9:F2:FF:B0:D5:82:C9:B3:86:81:21:3A:90:2E:65:00:4D;com.oneuphero.pogotracker
+
+    Alternatively, follow the directions here:
+    https://developers.google.com/maps/documentation/android/start#get-key
+
+    Once you have your key (it starts with "AIza"), replace the "google_maps_key"
+    string in this file.
+    -->
+    <string name="google_maps_key" translatable="false" templateMergeStrategy="preserve">AIzaSyA1ht4oOUbh3Tf_eH0tCxZQVFjH8mindyE</string>
+</resources>
