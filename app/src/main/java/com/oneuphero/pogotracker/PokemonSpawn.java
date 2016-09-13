@@ -34,6 +34,12 @@ public class PokemonSpawn {
     @SerializedName("bearing")
     @Expose
     private String bearing;
+    @SerializedName("pokemon_name")
+    @Expose
+    private String pokemonName;
+    @SerializedName("pokemon_icon")
+    @Expose
+    private String pokemonIconUrl;
 
     /**
      *
@@ -195,5 +201,23 @@ public class PokemonSpawn {
      */
     public void setBearing(String bearing) {
         this.bearing = bearing;
+    }
+
+    /**
+     *
+     * @
+     * The pokemon's name
+     */
+    public String getPokemonName() {
+        return pokemonName;
+    }
+
+    /**
+     *
+     * @return
+     * The URL for the pokemon icon
+     */
+    public String getPokemonIconUrl() {
+        return pokemonIconUrl;
     }
 }

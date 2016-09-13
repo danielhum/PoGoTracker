@@ -25,6 +25,7 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,6 +46,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private GoogleApiClient mGoogleApiClient;
     private Location mLastLocation;
     private List<PokemonSpawn> mSpawns = new ArrayList<>();
+    private List<PicassoMarker> mPicassoMarkers = new ArrayList<>(); // to ensure markers don't get GC'd before PicassoMarker updates
+    private Marker mCurrentLocationMarker;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -108,7 +111,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private void moveCameraToCurrentLocation() {
         if (mMap != null && mLastLocation != null) {
             LatLng userLatLng = new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude());
-            mMap.addMarker(new MarkerOptions().position(userLatLng).title("You are here"));
+            if (mCurrentLocationMarker != null) mCurrentLocationMarker.remove();
+            mCurrentLocationMarker = mMap.addMarker(new MarkerOptions().position(userLatLng).title("You are here"));
             mMap.moveCamera(CameraUpdateFactory.newLatLng(userLatLng));
         }
     }
@@ -133,6 +137,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 @Override
                 public void onResponse(Call<List<PokemonSpawn>> call, Response<List<PokemonSpawn>> response) {
                     List<PokemonSpawn> spawns = response.body();
+                    mSpawns.clear();
                     mSpawns.addAll(spawns);
                     addSpawnsToMap();
                 }
@@ -148,18 +153,29 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private void addSpawnsToMap() {
         if (mMap != null) {
 
+            // remove old markers
+            mMap.clear();
+            mPicassoMarkers.clear();
+
             LatLngBounds.Builder builder = new LatLngBounds.Builder();
 
             for (PokemonSpawn spawn : mSpawns) {
                 LatLng latLng = new LatLng(spawn.getLatitude(), spawn.getLongitude());
-                mMap.addMarker(new MarkerOptions().position(latLng).title(spawn.getPokedexNumber().toString()));
+                Marker newMarker = mMap.addMarker(new MarkerOptions().position(latLng).title(spawn.getPokemonName()));
+
+                PicassoMarker marker = new PicassoMarker(newMarker);
+                mPicassoMarkers.add(marker);
+                Picasso.with(MapsActivity.this).load(spawn.getPokemonIconUrl()).into(marker);
+
                 builder.include(latLng);
             }
 
-            LatLngBounds bounds = builder.build();
-            int padding = 10; // offset from edges of the map in pixels
-            CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(bounds, padding);
-            mMap.moveCamera(cu);
+            if (mSpawns.size() > 0) {
+                LatLngBounds bounds = builder.build();
+                int padding = 10; // offset from edges of the map in pixels
+                CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(bounds, padding);
+                mMap.moveCamera(cu);
+            }
         }
     }
 
