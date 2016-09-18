@@ -1,15 +1,17 @@
 package com.oneuphero.pogotracker;
 
-import android.*;
-import android.Manifest;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.design.widget.CoordinatorLayout;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.FragmentActivity;
-import android.os.Bundle;
-import android.util.Log;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
+import android.view.Menu;
+import android.view.MenuItem;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -36,7 +38,7 @@ import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
+public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
     public static final String BASE_URL = "https://pogo-tracker.herokuapp.com/";
     private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 5001;
@@ -48,6 +50,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private List<PokemonSpawn> mSpawns = new ArrayList<>();
     private List<PicassoMarker> mPicassoMarkers = new ArrayList<>(); // to ensure markers don't get GC'd before PicassoMarker updates
     private Marker mCurrentLocationMarker;
+    private CoordinatorLayout mCoordinatorLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,6 +60,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+
+        mCoordinatorLayout = (CoordinatorLayout) findViewById(R.id.mapsCoordinatorLayout);
+
+        Toolbar actionToolbar = (Toolbar) findViewById(R.id.action_toolbar);
+        setSupportActionBar(actionToolbar);
 
         // Create an instance of GoogleAPIClient.
         if (mGoogleApiClient == null) {
@@ -118,6 +126,33 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.maps, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.action_settings:
+                // User chose the "Settings" item, show the app settings UI...
+//                return true;
+                return false;
+
+            case R.id.action_refresh:
+                updateLastLocation();
+                return true;
+
+            default:
+                // If we got here, the user's action was not recognized.
+                // Invoke the superclass to handle it.
+                return super.onOptionsItemSelected(item);
+
+        }
+    }
+
+    @Override
     public void onConnected(@Nullable Bundle bundle) {
         updateLastLocation();
     }
@@ -133,9 +168,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         if (mLastLocation != null) {
             moveCameraToCurrentLocation();
             String ll = String.valueOf(mLastLocation.getLatitude()) + "," + String.valueOf(mLastLocation.getLongitude());
+            final Snackbar loadingSnackbar = Snackbar.make(mCoordinatorLayout, R.string.tracking_pokemon, Snackbar.LENGTH_INDEFINITE);
             mApiService.getSpawns(ll).enqueue(new Callback<List<PokemonSpawn>>() {
                 @Override
                 public void onResponse(Call<List<PokemonSpawn>> call, Response<List<PokemonSpawn>> response) {
+                    if (loadingSnackbar.isShown()) loadingSnackbar.dismiss();
                     List<PokemonSpawn> spawns = response.body();
                     mSpawns.clear();
                     mSpawns.addAll(spawns);
@@ -144,9 +181,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                 @Override
                 public void onFailure(Call<List<PokemonSpawn>> call, Throwable t) {
-
+                    if (loadingSnackbar.isShown()) loadingSnackbar.dismiss();
+                    Snackbar.make(mCoordinatorLayout, R.string.request_failure, Snackbar.LENGTH_LONG)
+                            .show();
                 }
             });
+            loadingSnackbar.show();
         }
     }
 
