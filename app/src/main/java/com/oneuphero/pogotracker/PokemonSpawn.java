@@ -3,7 +3,11 @@ package com.oneuphero.pogotracker;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 import java.util.Map;
+import java.util.TimeZone;
 
 public class PokemonSpawn {
 
@@ -219,5 +223,12 @@ public class PokemonSpawn {
      */
     public String getPokemonIconUrl() {
         return pokemonIconUrl;
+    }
+
+    public String getTimeLeft() {
+        Date date = new Date((long)expiresAt*1000);
+        SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
+        sdf.setTimeZone(TimeZone.getTimeZone("Asia/Singapore"));
+        return sdf.format(date);
     }
 }

@@ -201,7 +201,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             for (PokemonSpawn spawn : mSpawns) {
                 LatLng latLng = new LatLng(spawn.getLatitude(), spawn.getLongitude());
-                Marker newMarker = mMap.addMarker(new MarkerOptions().position(latLng).title(spawn.getPokemonName()));
+                Marker newMarker = mMap.addMarker(
+                        new MarkerOptions().
+                                position(latLng).
+                                title(spawn.getPokemonName()).
+                                snippet(spawn.getTimeLeft())
+                );
 
                 PicassoMarker marker = new PicassoMarker(newMarker);
                 mPicassoMarkers.add(marker);
