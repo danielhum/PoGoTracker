@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "692240708531",
+    "firebase_url": "https://ninth-physics-143206.firebaseio.com",
+    "project_id": "ninth-physics-143206",
+    "storage_bucket": "ninth-physics-143206.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:692240708531:android:136474b82bfee380",
+        "android_client_info": {
+          "package_name": "com.oneuphero.pogotracker"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "692240708531-ter8j06n30kqs9085rbqii05c79fi68i.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.oneuphero.pogotracker",
+            "certificate_hash": "473DCFE9F2FFB0D582C9B38681213A902E65004D"
+          }
+        },
+        {
+          "client_id": "692240708531-95a278nf1c95fupuu2kblmjq662d171l.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAesk2bz8V3VgHzxekRrpN8eKTxDVeyNgw"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "692240708531-95a278nf1c95fupuu2kblmjq662d171l.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
