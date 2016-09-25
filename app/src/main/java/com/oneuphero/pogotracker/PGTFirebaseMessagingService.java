@@ -4,13 +4,19 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.location.Location;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationServices;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
+import com.google.gson.Gson;
+
+import java.util.Map;
 
 /**
  * Created by dan on 25/9/2016.
@@ -19,6 +25,29 @@ import com.google.firebase.messaging.RemoteMessage;
 public class PGTFirebaseMessagingService extends FirebaseMessagingService {
     private static final String TAG = "PGTFirebaseMsgService";
 
+    private GoogleApiClient mGoogleApiClient;
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+
+        // Create an instance of GoogleAPIClient.
+        if (mGoogleApiClient == null) {
+            mGoogleApiClient = new GoogleApiClient.Builder(this)
+                    .addApi(LocationServices.API)
+                    .build();
+
+            mGoogleApiClient.connect();
+        }
+    }
+
+    @Override
+    public void onDestroy() {
+        if (mGoogleApiClient != null) {
+            mGoogleApiClient.disconnect();
+        }
+        super.onDestroy();
+    }
     /**
      * Called when message is received.
      *
@@ -43,7 +72,37 @@ public class PGTFirebaseMessagingService extends FirebaseMessagingService {
 
         // Check if message contains a data payload.
         if (remoteMessage.getData().size() > 0) {
-            Log.d(TAG, "Message data payload: " + remoteMessage.getData());
+            Map<String, String> data = remoteMessage.getData();
+            Gson gson = new Gson();
+            PokemonSpawn spawn = gson.fromJson(data.get("pokemon_spawn"), PokemonSpawn.class);
+//            Log.d(TAG, "Message data payload: " + remoteMessage.getData());
+
+
+            //if (Helper.haveLocationPermissions(getApplicationContext())) { TODO: fix this
+                Location location = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+
+                float distance = spawn.distanceTo(location);
+                if (location != null &&  distance <= 1000.f) {
+                    Intent intent = new Intent(this, MapsActivity.class);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                    PendingIntent pendingIntent = PendingIntent.getActivity(this, 0 /* Request code */, intent,
+                            PendingIntent.FLAG_ONE_SHOT);
+
+                    Uri defaultSoundUri= RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+                    NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)
+                            .setSmallIcon(R.mipmap.ic_launcher)
+                            .setContentTitle(String.format("%s %f meters away!", spawn.getPokemonName(), distance))
+                            .setContentText(String.format("bearing: %f degrees", spawn.bearingTo(location)))
+                            .setAutoCancel(true)
+                            .setSound(defaultSoundUri)
+                            .setContentIntent(pendingIntent);
+
+                    NotificationManager notificationManager =
+                            (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+
+                    notificationManager.notify(0 /* ID of notification */, notificationBuilder.build());
+                }
+            //}
         }
 
         // Check if message contains a notification payload.
@@ -55,30 +114,4 @@ public class PGTFirebaseMessagingService extends FirebaseMessagingService {
         // message, here is where that should be initiated. See sendNotification method below.
     }
     // [END receive_message]
-
-    /**
-     * Create and show a simple notification containing the received FCM message.
-     *
-     * @param messageBody FCM message body received.
-     */
-    private void sendNotification(String messageBody) {
-        Intent intent = new Intent(this, MapsActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0 /* Request code */, intent,
-                PendingIntent.FLAG_ONE_SHOT);
-
-        Uri defaultSoundUri= RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)
-//                .setSmallIcon(R.drawable.ic_stat_ic_notification)
-                .setContentTitle("FCM Message")
-                .setContentText(messageBody)
-                .setAutoCancel(true)
-                .setSound(defaultSoundUri)
-                .setContentIntent(pendingIntent);
-
-        NotificationManager notificationManager =
-                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-
-        notificationManager.notify(0 /* ID of notification */, notificationBuilder.build());
-    }
 }

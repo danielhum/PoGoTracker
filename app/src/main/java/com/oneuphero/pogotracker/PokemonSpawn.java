@@ -1,5 +1,7 @@
 package com.oneuphero.pogotracker;
 
+import android.location.Location;
+
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
@@ -230,5 +232,19 @@ public class PokemonSpawn {
         SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
         sdf.setTimeZone(TimeZone.getTimeZone("Asia/Singapore"));
         return sdf.format(date);
+    }
+
+    public float distanceTo(Location location) {
+        Location thisLoc = new Location("");
+        thisLoc.setLatitude(latitude);
+        thisLoc.setLongitude(longitude);
+        return thisLoc.distanceTo(location);
+    }
+
+    public float bearingTo(Location location) {
+        Location thisLoc = new Location("");
+        thisLoc.setLatitude(latitude);
+        thisLoc.setLongitude(longitude);
+        return thisLoc.bearingTo(location);
     }
 }
