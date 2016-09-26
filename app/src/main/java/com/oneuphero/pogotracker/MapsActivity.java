@@ -25,6 +25,7 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.firebase.crash.FirebaseCrash;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -165,10 +166,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION);
             return;
         }
+        //noinspection MissingPermission
         mLastLocation = LocationServices.FusedLocationApi.getLastLocation(
                 mGoogleApiClient);
 
         if (mLastLocation != null) {
+            PreferencesStore.setLastLocation(this, mLastLocation);
             moveCameraToCurrentLocation();
             String ll = String.valueOf(mLastLocation.getLatitude()) + "," + String.valueOf(mLastLocation.getLongitude());
             final Snackbar loadingSnackbar = Snackbar.make(mCoordinatorLayout, R.string.tracking_pokemon, Snackbar.LENGTH_INDEFINITE);
@@ -197,7 +200,15 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         if (mMap != null) {
 
             // remove old markers
-            mMap.clear();
+            // Note that we do not use myMap.clear() because that incur in the exception
+            // "java.lang.IllegalArgumentException: Released unknown bitmap reference"
+            try {
+                for (PicassoMarker marker : mPicassoMarkers) {
+                    marker.getMarker().remove();
+                }
+            } catch (IllegalArgumentException e) {
+                FirebaseCrash.report(e);
+            }
             mPicassoMarkers.clear();
 
             LatLngBounds.Builder builder = new LatLngBounds.Builder();

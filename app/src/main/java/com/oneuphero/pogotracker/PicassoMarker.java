@@ -51,4 +51,9 @@ public class PicassoMarker implements Target {
 
     }
 
+    public Marker getMarker() {
+        return mMarker;
+    }
+
+
 }

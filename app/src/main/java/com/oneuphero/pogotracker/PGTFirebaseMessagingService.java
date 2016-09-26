@@ -12,6 +12,7 @@ import android.util.Log;
 
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationServices;
+import com.google.firebase.crash.FirebaseCrash;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 import com.google.gson.Gson;
@@ -68,7 +69,7 @@ public class PGTFirebaseMessagingService extends FirebaseMessagingService {
 
         // TODO(developer): Handle FCM messages here.
         // Not getting messages here? See why this may be: https://goo.gl/39bRNJ
-        Log.d(TAG, "From: " + remoteMessage.getFrom());
+//        Log.d(TAG, "From: " + remoteMessage.getFrom());
 
         // Check if message contains a data payload.
         if (remoteMessage.getData().size() > 0) {
@@ -77,30 +78,39 @@ public class PGTFirebaseMessagingService extends FirebaseMessagingService {
             PokemonSpawn spawn = gson.fromJson(data.get("pokemon_spawn"), PokemonSpawn.class);
 //            Log.d(TAG, "Message data payload: " + remoteMessage.getData());
 
-
             //if (Helper.haveLocationPermissions(getApplicationContext())) { TODO: fix this
                 Location location = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
 
-                float distance = spawn.distanceTo(location);
-                if (location != null &&  distance <= 1000.f) {
-                    Intent intent = new Intent(this, MapsActivity.class);
-                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                    PendingIntent pendingIntent = PendingIntent.getActivity(this, 0 /* Request code */, intent,
-                            PendingIntent.FLAG_ONE_SHOT);
+                if (location == null) location = PreferencesStore.getLastLocation(this);
 
-                    Uri defaultSoundUri= RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-                    NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)
-                            .setSmallIcon(R.mipmap.ic_launcher)
-                            .setContentTitle(String.format("%s %f meters away!", spawn.getPokemonName(), distance))
-                            .setContentText(String.format("bearing: %f degrees", spawn.bearingTo(location)))
-                            .setAutoCancel(true)
-                            .setSound(defaultSoundUri)
-                            .setContentIntent(pendingIntent);
+                if (location != null) {
+                    int distance = (int) spawn.distanceTo(location);
+                    if (distance <= 1000) {
+                        Intent intent = new Intent(this, MapsActivity.class);
+                        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0 /* Request code */, intent,
+                                PendingIntent.FLAG_ONE_SHOT);
 
-                    NotificationManager notificationManager =
-                            (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                        Uri defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+                        float bearing = spawn.bearingTo(location);
+                        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)
+                                .setSmallIcon(R.mipmap.ic_launcher)
+                                .setContentTitle(String.format("%s %d meters away!", spawn.getPokemonName(), distance))
+                                .setContentText(String.format("bearing:%.2f°", bearing))
+                                .setAutoCancel(false) //TODO: false for debug, change this later
+                                .setSound(defaultSoundUri)
+                                .setContentIntent(pendingIntent);
 
-                    notificationManager.notify(0 /* ID of notification */, notificationBuilder.build());
+                        NotificationManager notificationManager =
+                                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+
+                        notificationManager.notify(0 /* ID of notification */, notificationBuilder.build());
+                    } else {
+                        Log.d(TAG, String.format("ignoring %s spawn %d meters away", spawn.getPokemonName(), distance));
+                    }
+                } else {
+                    FirebaseCrash.logcat(Log.DEBUG, TAG, "location null, notification ignored");
+                    Log.w(TAG, "location null, notification ignored");
                 }
             //}
         }
