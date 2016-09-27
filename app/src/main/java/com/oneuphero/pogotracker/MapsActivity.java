@@ -224,14 +224,18 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
                 PicassoMarker marker = new PicassoMarker(newMarker);
                 mPicassoMarkers.add(marker);
-                Picasso.with(MapsActivity.this).load(spawn.getPokemonIconUrl()).into(marker);
+                Picasso.with(MapsActivity.this).load(spawn.getPokemonIconUrl())
+                        .resize(70, 70).centerInside().into(marker);
 
                 builder.include(latLng);
             }
 
             if (mSpawns.size() > 0) {
+                if (mCurrentLocationMarker != null) {
+                    builder.include(mCurrentLocationMarker.getPosition());
+                }
                 LatLngBounds bounds = builder.build();
-                int padding = 10; // offset from edges of the map in pixels
+                int padding = 50; // offset from edges of the map in pixels
                 CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(bounds, padding);
                 mMap.moveCamera(cu);
             }

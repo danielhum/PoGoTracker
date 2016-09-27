@@ -85,7 +85,7 @@ public class PGTFirebaseMessagingService extends FirebaseMessagingService {
 
                 if (location != null) {
                     int distance = (int) spawn.distanceTo(location);
-                    if (distance <= 1000) {
+                    if (distance <= 650) {
                         Intent intent = new Intent(this, MapsActivity.class);
                         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0 /* Request code */, intent,
@@ -104,7 +104,7 @@ public class PGTFirebaseMessagingService extends FirebaseMessagingService {
                         NotificationManager notificationManager =
                                 (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 
-                        notificationManager.notify(0 /* ID of notification */, notificationBuilder.build());
+                        notificationManager.notify(spawn.getId(), notificationBuilder.build());
                     } else {
                         Log.d(TAG, String.format("ignoring %s spawn %d meters away", spawn.getPokemonName(), distance));
                     }
