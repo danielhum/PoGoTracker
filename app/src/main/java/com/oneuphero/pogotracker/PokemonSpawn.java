@@ -4,18 +4,18 @@ import android.location.Location;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
+import com.orm.SugarRecord;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
-import java.util.Map;
 import java.util.TimeZone;
 
-public class PokemonSpawn {
+public class PokemonSpawn extends SugarRecord {
 
-    @SerializedName("id")
-    @Expose
-    private Integer id;
+//    @SerializedName("id")
+//    @Expose
+//    private Integer id;
     @SerializedName("pokedex_number")
     @Expose
     private Integer pokedexNumber;
@@ -47,23 +47,27 @@ public class PokemonSpawn {
     @Expose
     private String pokemonIconUrl;
 
+    public PokemonSpawn() {
+        // default constructor is necessary for SugarRecord
+    }
+
     /**
      *
      * @return
      * The id
      */
-    public Integer getId() {
-        return id;
-    }
+//    public Integer getId() {
+//        return id;
+//    }
 
     /**
      *
      * @param id
      * The id
      */
-    public void setId(Integer id) {
-        this.id = id;
-    }
+//    public void setId(Integer id) {
+//        this.id = id;
+//    }
 
     /**
      *
