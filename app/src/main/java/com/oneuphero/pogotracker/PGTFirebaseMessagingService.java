@@ -1,16 +1,18 @@
 package com.oneuphero.pogotracker;
 
-import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.content.Context;
 import android.content.Intent;
 import android.location.Location;
-import android.media.RingtoneManager;
-import android.net.Uri;
-import android.support.v4.app.NotificationCompat;
+import android.support.annotation.NonNull;
 import android.util.Log;
 
+import com.google.android.gms.awareness.Awareness;
+import com.google.android.gms.awareness.fence.AwarenessFence;
+import com.google.android.gms.awareness.fence.FenceUpdateRequest;
+import com.google.android.gms.awareness.fence.LocationFence;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.LocationServices;
 import com.google.firebase.crash.FirebaseCrash;
 import com.google.firebase.messaging.FirebaseMessagingService;
@@ -30,6 +32,7 @@ public class PGTFirebaseMessagingService extends FirebaseMessagingService {
     private static final String TAG = "PGTFirebaseMsgService";
 
     private GoogleApiClient mGoogleApiClient;
+    private PendingIntent mPendingIntent;
 
     @Override
     public void onCreate() {
@@ -39,10 +42,14 @@ public class PGTFirebaseMessagingService extends FirebaseMessagingService {
         if (mGoogleApiClient == null) {
             mGoogleApiClient = new GoogleApiClient.Builder(this)
                     .addApi(LocationServices.API)
+                    .addApi(Awareness.API)
                     .build();
 
             mGoogleApiClient.connect();
         }
+
+        Intent intent = new Intent(MapsActivity.FENCE_RECEIVER_ACTION);
+        mPendingIntent = PendingIntent.getBroadcast(this, 0, intent, 0);
     }
 
     @Override
@@ -98,25 +105,29 @@ public class PGTFirebaseMessagingService extends FirebaseMessagingService {
                     for (PokemonSpawn spawn : spawnList) {
                         int distance = (int) spawn.distanceTo(location);
                         if (distance <= 600) {
-                            Intent intent = new Intent(this, MapsActivity.class);
-                            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                            PendingIntent pendingIntent = PendingIntent.getActivity(this, 0 /* Request code */, intent,
-                                    PendingIntent.FLAG_ONE_SHOT);
+                            Helper.notifyAboutSpawn(this, spawn, distance, location);
+                        } else if (distance <= 1800) {
+                            AwarenessFence spawnFence = LocationFence.entering(spawn.getLatitude(), spawn.getLongitude(), 600);
+                            final String fenceKey = String.valueOf(spawn.getId());
 
-                            Uri defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-                            float bearing = spawn.bearingTo(location);
-                            NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)
-                                    .setSmallIcon(R.mipmap.ic_launcher)
-                                    .setContentTitle(String.format("%s %d meters away!", spawn.getPokemonName(), distance))
-                                    .setContentText(String.format("bearing:%.2f°", bearing))
-                                    .setAutoCancel(false) //TODO: false for debug, change this later
-                                    .setSound(defaultSoundUri)
-                                    .setContentIntent(pendingIntent);
-
-                            NotificationManager notificationManager =
-                                    (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-
-                            notificationManager.notify(spawn.getId(), notificationBuilder.build());
+                            // *** TODO: Unregister and delete spawn after it expires ***
+                            spawn.save();
+                            Awareness.FenceApi.updateFences(
+                                    mGoogleApiClient, new FenceUpdateRequest.Builder()
+                                        .addFence(fenceKey, spawnFence, mPendingIntent)
+                                        .build())
+                                    .setResultCallback(new ResultCallback<Status>() {
+                                        @Override
+                                        public void onResult(@NonNull Status status) {
+                                            if(status.isSuccess()) {
+                                                Log.i(TAG, "Fence was successfully registered.");
+                                                //queryFence(fenceKey);
+                                            } else {
+                                                Log.e(TAG, "Fence could not be registered: " + status);
+                                            }
+                                        }
+                                    });
+                            Log.i(TAG, String.format("setup fence for %s spawn %d meters away", spawn.getPokemonName(), distance));
                         } else {
                             Log.d(TAG, String.format("ignoring %s spawn %d meters away", spawn.getPokemonName(), distance));
                         }
@@ -136,5 +147,6 @@ public class PGTFirebaseMessagingService extends FirebaseMessagingService {
         // Also if you intend on generating your own notifications as a result of a received FCM
         // message, here is where that should be initiated. See sendNotification method below.
     }
+
     // [END receive_message]
 }

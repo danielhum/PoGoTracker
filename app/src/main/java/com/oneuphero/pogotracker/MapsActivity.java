@@ -1,5 +1,6 @@
 package com.oneuphero.pogotracker;
 
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
@@ -10,6 +11,7 @@ import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
@@ -44,6 +46,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     public static final String BASE_URL = "https://pogo-tracker.herokuapp.com/";
     private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 5001;
+    public static final String FENCE_RECEIVER_ACTION =
+            BuildConfig.APPLICATION_ID + "FENCE_RECEIVER_ACTION";
 
     private GoogleMap mMap;
     private ApiEndpointInterface mApiService;
@@ -53,6 +57,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private List<PicassoMarker> mPicassoMarkers = new ArrayList<>(); // to ensure markers don't get GC'd before PicassoMarker updates
     private Marker mCurrentLocationMarker;
     private CoordinatorLayout mCoordinatorLayout;
+
+    private PGTFenceReceiver mFenceReceiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -98,6 +104,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     protected void onStop() {
         mGoogleApiClient.disconnect();
+        if (mFenceReceiver != null) unregisterReceiver(mFenceReceiver);
         super.onStop();
     }
 
@@ -159,6 +166,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public void onConnected(@Nullable Bundle bundle) {
         updateLastLocation();
+
+        // setup for Fences
+        mFenceReceiver = new PGTFenceReceiver(mGoogleApiClient);
+        registerReceiver(mFenceReceiver, new IntentFilter(FENCE_RECEIVER_ACTION));
     }
 
     private void updateLastLocation() {
