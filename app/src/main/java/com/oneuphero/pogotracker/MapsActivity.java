@@ -179,21 +179,39 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 @Override
                 public void onResponse(Call<List<PokemonSpawn>> call, Response<List<PokemonSpawn>> response) {
                     if (loadingSnackbar.isShown()) loadingSnackbar.dismiss();
-                    List<PokemonSpawn> spawns = response.body();
-                    mSpawns.clear();
-                    mSpawns.addAll(spawns);
-                    addSpawnsToMap();
+                    if (response.isSuccessful()) {
+                        List<PokemonSpawn> spawns = response.body();
+                        if (spawns == null) {
+                            showErrorSnackbar(R.string.no_pokemon_found);
+                            Log.e(MapsActivity.class.getSimpleName(), "No spawns received!");
+                            Log.e(MapsActivity.class.getSimpleName(), response.toString());
+                        } else {
+                            mSpawns.clear();
+                            mSpawns.addAll(spawns);
+                            addSpawnsToMap();
+                        }
+                    } else {
+                        showErrorSnackbar(R.string.request_failure);
+                        Log.e(MapsActivity.class.getSimpleName(), "getSpawns failed, status " + String.valueOf(response.code()));
+                    }
                 }
 
                 @Override
                 public void onFailure(Call<List<PokemonSpawn>> call, Throwable t) {
                     if (loadingSnackbar.isShown()) loadingSnackbar.dismiss();
-                    Snackbar.make(mCoordinatorLayout, R.string.request_failure, Snackbar.LENGTH_LONG)
-                            .show();
+                    showErrorSnackbar();
                 }
             });
             loadingSnackbar.show();
         }
+    }
+
+    private void showErrorSnackbar() {
+        showErrorSnackbar(R.string.tracking_pokemon_error);
+    }
+    private void showErrorSnackbar(int errorMsgResId) {
+        Snackbar.make(mCoordinatorLayout, errorMsgResId, Snackbar.LENGTH_LONG)
+                .show();
     }
 
     private void addSpawnsToMap() {

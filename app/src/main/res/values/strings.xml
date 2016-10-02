@@ -4,5 +4,7 @@
     <string name="action_settings">Settings</string>
     <string name="action_refresh">Refresh</string>
     <string name="tracking_pokemon">Tracking Pokemon...</string>
-    <string name="request_failure">Error tracking Pokemon :( Please try again.</string>
+    <string name="tracking_pokemon_error">Error tracking Pokemon :( Please try again.</string>
+    <string name="no_pokemon_found">No Pokemon found :( Please try again.</string>
+    <string name="request_failure">Request failed :( Please try again.</string>
 </resources>
