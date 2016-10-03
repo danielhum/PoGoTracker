@@ -3,6 +3,7 @@ package com.oneuphero.pogotracker;
 import android.app.PendingIntent;
 import android.content.Intent;
 import android.location.Location;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
@@ -33,10 +34,13 @@ public class PGTFirebaseMessagingService extends FirebaseMessagingService {
 
     private GoogleApiClient mGoogleApiClient;
     private PendingIntent mPendingIntent;
+    private Handler mHander;
 
     @Override
     public void onCreate() {
         super.onCreate();
+
+        mHander = new Handler();
 
         // Create an instance of GoogleAPIClient.
         if (mGoogleApiClient == null) {
@@ -102,16 +106,16 @@ public class PGTFirebaseMessagingService extends FirebaseMessagingService {
                 if (location == null) location = PreferencesStore.getLastLocation(this);
 
                 if (location != null) {
-                    for (PokemonSpawn spawn : spawnList) {
+                    for (final PokemonSpawn spawn : spawnList) {
                         int distance = (int) spawn.distanceTo(location);
                         if (distance <= 600) {
                             Helper.notifyAboutSpawn(this, spawn, distance, location);
-                        } else if (distance <= 1800) {
-                            AwarenessFence spawnFence = LocationFence.entering(spawn.getLatitude(), spawn.getLongitude(), 600);
+                        } else if (distance <= 1200) {
+                            AwarenessFence spawnFence = LocationFence.entering(spawn.getLatitude(), spawn.getLongitude(), 500);
                             final String fenceKey = String.valueOf(spawn.getId());
 
-                            // *** TODO: Unregister and delete spawn after it expires ***
                             spawn.save();
+                            final String pokemonName = spawn.getPokemonName();
                             Awareness.FenceApi.updateFences(
                                     mGoogleApiClient, new FenceUpdateRequest.Builder()
                                         .addFence(fenceKey, spawnFence, mPendingIntent)
@@ -121,13 +125,33 @@ public class PGTFirebaseMessagingService extends FirebaseMessagingService {
                                         public void onResult(@NonNull Status status) {
                                             if(status.isSuccess()) {
                                                 Log.i(TAG, "Fence was successfully registered.");
-                                                //queryFence(fenceKey);
                                             } else {
                                                 Log.e(TAG, "Fence could not be registered: " + status);
                                             }
                                         }
                                     });
-                            Log.i(TAG, String.format("setup fence for %s spawn %d meters away", spawn.getPokemonName(), distance));
+                            Log.i(TAG, String.format("setup fence for %s spawn %d meters away", pokemonName, distance));
+
+                            mHander.postDelayed(new Runnable() {
+                                @Override
+                                public void run() {
+                                    Awareness.FenceApi.updateFences(
+                                            mGoogleApiClient, new FenceUpdateRequest.Builder()
+                                                    .removeFence(fenceKey)
+                                                    .build())
+                                            .setResultCallback(new ResultCallback<Status>() {
+                                                @Override
+                                                public void onResult(@NonNull Status status) {
+                                                    if (status.isSuccess()) {
+                                                        Log.i(TAG, String.format("removed fence for %s spawn", pokemonName));
+                                                    } else {
+                                                        Log.e(TAG, String.format("failed to remove fence for %s spawn", pokemonName));
+                                                    }
+                                                    spawn.delete();
+                                                }
+                                            });
+                                }
+                            }, 10*60000);
                         } else {
                             Log.d(TAG, String.format("ignoring %s spawn %d meters away", spawn.getPokemonName(), distance));
                         }

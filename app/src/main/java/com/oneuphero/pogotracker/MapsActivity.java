@@ -15,6 +15,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import com.google.android.gms.awareness.Awareness;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationServices;
@@ -80,6 +81,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     .addConnectionCallbacks(this)
                     .addOnConnectionFailedListener(this)
                     .addApi(LocationServices.API)
+                    .addApi(Awareness.API)
                     .build();
         }
 
@@ -104,7 +106,13 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     protected void onStop() {
         mGoogleApiClient.disconnect();
-        if (mFenceReceiver != null) unregisterReceiver(mFenceReceiver);
+        if (mFenceReceiver != null) {
+            try {
+                unregisterReceiver(mFenceReceiver);
+            } catch (IllegalArgumentException e) {
+                Log.w("MapsActivity", "mFenceReceiver not registered, did not unregister");
+            }
+        }
         super.onStop();
     }
 
